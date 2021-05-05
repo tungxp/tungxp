@@ -1,4 +1,7 @@
-You want to make a custom CentOS 7 / RHEL 7 boot CD with custom kickstart files located on the CD. Suppose that you have 10 server and you want to same configuration to all server like web servers, database servers, mail servers, etc.In this way, you know that any application you build will run the same way on all machines. And you can install CentOS without touching keyboard or mouse and even you can automate post installation configuration process.
+You want to make a custom CentOS 7 / RHEL 7 boot CD with custom kickstart files located on the CD. 
+Suppose that you have 10 server and you want to same configuration to all server like web servers, database servers, mail servers, etc.
+In this way, you know that any application you build will run the same way on all machines. 
+And you can install CentOS without touching keyboard or mouse and even you can automate post installation configuration process.
 Requirement-
 1- First you need to install your build environment. It is sufficient to install a “@Base” system.
 2- Need to Centos-7 / RHEL-7 DVD

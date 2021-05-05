@@ -1,0 +1,114 @@
+You want to make a custom CentOS 7 / RHEL 7 boot CD with custom kickstart files located on the CD. Suppose that you have 10 server and you want to same configuration to all server like web servers, database servers, mail servers, etc.In this way, you know that any application you build will run the same way on all machines. And you can install CentOS without touching keyboard or mouse and even you can automate post installation configuration process.
+Requirement-
+1- First you need to install your build environment. It is sufficient to install a “@Base” system.
+2- Need to Centos-7 / RHEL-7 DVD
+3- Prepare Kickstart file
+4- Packages-
+- createrepo
+- genisoimage
+- Now Building Custom Centos-7 / RHEL-7 Boot CD -
+
+1- Prepare your build environment
+First Install a base CentOS-7 Machine,Then If the installation of your CentOS 7 machine is finished you can continue with preparing your build environment.
+
+2- Create needed folder structure as root
+# mkdir -p ~/kickstart_build/isolinux/{images,ks,LiveOS,Packages,postinstall}
+
+Note- The folders will contain the following:
+images: contents of the images directory located on the CentOS DVD
+ks: all your kickstart files which we will create later on
+LiveOS: contents of the LieveOS directory on the CentOS DVD
+Packages: all RPM packages from CentOS 7 DVD plus additional packages.
+postinstall: everything you want so to do after installation, for example executing custom scripts
+
+3- Now Copy needed content to your local folder:
+# mkdir -p /mnt/iso
+# mount -o loop CentOS-7-x86_64-Minimal-1511.iso /mnt/iso/
+# cp /mnt/iso/.discinfo ~/kickstart_build/isolinux/
+# cp /mnt/iso/isolinux/* ~/kickstart_build/isolinux/
+# rsync -av /mnt/iso/images/ ~/kickstart_build/isolinux/images/
+# cp /mnt/iso/LiveOS/* ~/kickstart_build/isolinux/LiveOS/
+# ll /mnt/iso/repodata/ | grep -i comps
+-r--r--r--. 1 root root 158802 Dec 10 2015 436345f4b666f0a461d479ccfabc2c22823d4f2173c2653e5250fea62f0afe98-c7-x86_64-comps.xml.gz
+# cd ~/kickstart_build/
+# gunzip 4a04a16ba51071ab8942bc507087ed59cac82e9b22134b322f1452a45b87a1a2-c7-minimal-x86_64-comps.xml.gz
+# mv 4a04a16ba51071ab8942bc507087ed59cac82e9b22134b322f1452a45b87a1a2-c7-minimal-x86_64-comps.xml comps.xml
+
+4- Copy all your packages and create repodata
+# rsync -av /mnt/iso/Packages/ ~/kickstart_build/isolinux/Packages/
+# umount /mnt/iso
+
+5- Now we need to create the repodata folder in ~/kickstart_build/isolinux/Packages/:-
+# yum install -y createrepo
+# cd ~/kickstart_build/isolinux
+# createrepo -g ~/kickstart_build/comps.xml .
+6- Create a kickstart file
+# cd ~/kickstart_build/isolinux/ks
+# vim ks.cfg 
+
+Note- You can also create your own kickstart file. (Use- system-config-kickstart)
+--------------------------------------------------------------------------------------------------------------
+# System timezone
+timezone Asia/Kolkata
+# System language
+lang en_US
+# Firewall configuration
+firewall --disabled
+# System authorization information
+auth --useshadow --passalgo=sha512
+# Use CDROM installation media
+cdrom
+# Use text install
+install
+text
+# SELinux configuration
+selinux --disabled
+# Network information
+network --bootproto=static --device=eth0 --gateway=192.168.0.1 --ip=192.168.0.1 --nameserver=192.168.0.1 --netmask=255.255.255.0 --hostname=linux01.custmocentos.com
+# System bootloader configuration
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive=sda
+# Partition clearing information
+part /boot --fstype="xfs" --size=512
+part pv.219 --fstype="lvmpv" --size 1 --grow
+volgroup vg_system --pesize=4096 pv.219
+logvol / --fstype="xfs" --size=1 --grow --label="rootlv" --name=rootlv --vgname=vg_system
+logvol swap --fstype="swap" --size=2048 --name=swaplv --vgname=vg_system
+# Reboot after installation 
+reboot
+%packages
+@core 
+chrony
+%end
+%post
+#Note- There you can also define your own script for your specific purpose.
+# For Ex-
+mkdir /ashu
+touch /ashu/ashu
+echo "Succefully kickstart Tested" >> /ashu/ashu
+%end 
+--------------------------------------------------------------------------------------------------------------
+7-You can validate your kickstart file like this:
+# ksvalidator ~/kickstart_build/isolinux/ks/ks.cfg
+8- Now add your kickstart file label in the boot menu
+# cd kickstart_build/isolinux/
+# vim isolinux.cfg
+---------------------------------------------------------------------------------------------------------------
+# Put below line above this line "menu separator" (Line No- 72-76)
+label check
+menu label Test this ^Install Using Kickstart CentOS 7
+menu default
+kernel vmlinuz biosdevname=0
+append initrd=initrd.img ks=cdrom:/ks/ks.cfg
+:wq! (Save & Quite)
+---------------------------------------------------------------------------------------------------------------
+9- Final create your custom CentOS 7 ISO file
+# yum install -y genisoimage 
+# cd ~/kickstart_build/
+# mkisofs -o centos-7-custom_dvd.iso -b isolinux.bin -c boot.cat -no-emul-boot -V 'CentOS 7 x86_64' -boot-load-size 4 -boot-info-table -R -J -v -T isolinux/
+10- Iso creation process has completed. and u can check...
+# ls
+centos-7-custom_dvd.iso
+
+11- Now you can create bootable cd of "centos-7-custom_DVD.iso" and use it in any other systems for installation. And finely when you boot your system show this label "Install Using Kickstart CentOS 7" in the table of centos installation menu. and u can choose it. https://lh6.googleusercontent.com/-pzwRU4bKrsE/V8GJQ3oZEGI/AAAAAAAAA5E/Goep4BqpHzMObfE5dTw7oP2z5_ml6bATACL0B/w639-h484-no/ashu-1-1.png
+
+Congratulations 🙂 Your kickstart installation should run..!!

@@ -1,0 +1,72 @@
+Các bước tạo Local Yum Repository
+Chuẩn bị một máy ảo chạy CentOS-7 server. Ở đây, ta sẽ sử dụng một máy ảo trên KVM, quản lý trên WebvirtCloud. Một file DVD-iso của CentOS-7.
+
+Có thể tải file tại đây: http://mirrors.nhanhoa.com/centos/7.8.2003/isos/x86_64/
+
+Tải file dung lượng 4.5GB về host KVM hoặc về chính máy ảo.
+
+
+Bước 1: Mount ổ đĩa CD/DVD vào máy ảo
+Mount file DVD-iso vào máy ảo
+
+
+Tạo ổ đĩa CD/DVD vào 1 thư mục. Ở đây, ta sẽ tạo thư mục /cdrom
+
+mkdir /cdrom
+mount /dev/cdrom /cdrom/
+
+Kiểm tra lại thư mục vừa mount:
+
+
+Chú ý: Nếu bạn tải file iso về máy ảo của bạn, thì có thể mount file iso bằng câu lệnh:
+
+mount -o loop <đường_dẫn_file_ISO> /cdrom
+Bước 2: Backups các file repo
+Di chuyển tất cả các file .repo trong thư mục /etc/yum.repos.d/ sang một thư mục khác
+
+mkdir /opt/backups-repo
+mv /etc/yum.repos.d/*.repo /opt/backups-repo/
+
+Bước 3: Tạo repo file
+Tạo file cấu hình repo từ file ISO
+
+Tạo 1 file .repo trong thư mục /etc/yum.repos.d/
+
+vi /etc/yum.repos.d/cloud365-local.repo
+Nội dung file:
+
+[Tecapro]
+name=LocalRepository
+baseurl=file:///cdrom
+enabled=1
+gpgcheck=1
+gpgkey=file:///cdrom/RPM-GPG-KEY-CentOS-7
+
+Trong đó:
+
+[Tecapro] : Tên repo sẽ hiển thị trong quá trình cài đặt gói
+name : Tên của Repo
+baseurl : Vị trí package
+enabled : Bật sử dụng Repo
+gpgcheck : Bật cài đặt an toàn. Nếu set giá trị là 0 thì không cần để ý giá trị gpgkey
+gpgkey : Vị trí lưu key
+Bước 4: Xóa yum cached
+yum clean all
+Bước 5: Cài đặt gói
+Ta sẽ thử cài đặt gói httpd:
+
+yum install httpd
+
+Việc cài đặt các gói được lấy từ LocalRepo
+Khởi động service httpd:
+
+systemctl start httpd
+systemctl status httpd
+
+Truy cập địa chỉ IP để kiểm tra service httpd:
+
+
+Tổng kết
+Trên đây là hướng dẫn tạo Local Repository để lưu trữ các package trên chính máy của mình. Rất mong các ý kiến đóng góp từ mọi người.
+
+Cảm ơn các bạn đã theo dõi.
